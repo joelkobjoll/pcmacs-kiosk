@@ -1,10 +1,10 @@
-import { slidesApi } from '@/features/playlist/api/slides-api';
-import type { Slide } from '@/shared/types/api';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePreloader } from './use-preloader';
+import { slidesApi } from "@/features/playlist/api/slides-api";
+import type { Slide } from "@/shared/types/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePreloader } from "./use-preloader";
 
 const POLL_INTERVAL_MS = 10_000;
-const CACHE_KEY = 'pcmacs_slides_cache';
+const CACHE_KEY = "pcmacs_slides_cache";
 
 interface UseSlideshow {
   currentSlide: Slide | null;
@@ -30,7 +30,7 @@ function saveCache(slides: Slide[]): void {
 }
 
 function parseTimeToMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
+  const [h, m] = hhmm.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
@@ -43,8 +43,8 @@ function isScheduledNow(slide: Slide): boolean {
 
   if (slide.scheduleStart || slide.scheduleEnd) {
     const cur = now.getHours() * 60 + now.getMinutes();
-    const start = parseTimeToMinutes(slide.scheduleStart ?? '00:00');
-    const end = parseTimeToMinutes(slide.scheduleEnd ?? '23:59');
+    const start = parseTimeToMinutes(slide.scheduleStart ?? "00:00");
+    const end = parseTimeToMinutes(slide.scheduleEnd ?? "23:59");
     if (end >= start) {
       if (cur < start || cur > end) return false;
     } else {
@@ -105,7 +105,9 @@ export function useSlideshow(): UseSlideshow {
   /** Immediately advance to the next slide, cancelling any pending timer */
   const advance = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    setCurrentIndex((prev) => (prev + 1) % Math.max(activeLengthRef.current, 1));
+    setCurrentIndex(
+      (prev) => (prev + 1) % Math.max(activeLengthRef.current, 1),
+    );
   }, []);
 
   // Initial load + polling
@@ -129,13 +131,17 @@ export function useSlideshow(): UseSlideshow {
     if (currentSlide.durationMs === 0) return; // IFrame API will call advance()
 
     timerRef.current = setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % Math.max(activeSlides.length, 1));
+      setCurrentIndex(
+        (prev) => (prev + 1) % Math.max(activeLengthRef.current, 1),
+      );
     }, currentSlide.durationMs);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [currentSlide, activeSlides.length]);
+    // Use primitive deps so polls that rebuild object refs don't reset the timer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlide?.id, currentSlide?.durationMs]);
 
   // Safety clamp: if index goes out of bounds (e.g. slides deleted)
   useEffect(() => {
