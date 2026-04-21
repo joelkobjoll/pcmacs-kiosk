@@ -1,15 +1,15 @@
-import { Label } from '@/shared/components/ui/label';
-import { Switch } from '@/shared/components/ui/switch';
-import { Clock } from 'lucide-react';
+import { Label } from "@/shared/components/ui/label";
+import { Switch } from "@/shared/components/ui/switch";
+import { Clock } from "lucide-react";
 
 const DAYS = [
-  { label: 'Mon', value: 1 },
-  { label: 'Tue', value: 2 },
-  { label: 'Wed', value: 3 },
-  { label: 'Thu', value: 4 },
-  { label: 'Fri', value: 5 },
-  { label: 'Sat', value: 6 },
-  { label: 'Sun', value: 0 },
+  { label: "Mon", value: 1 },
+  { label: "Tue", value: 2 },
+  { label: "Wed", value: 3 },
+  { label: "Thu", value: 4 },
+  { label: "Fri", value: 5 },
+  { label: "Sat", value: 6 },
+  { label: "Sun", value: 0 },
 ] as const;
 
 export interface ScheduleValue {
@@ -29,7 +29,8 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
     onChange({
       ...value,
       enabled,
-      scheduleDays: enabled && value.scheduleDays.length === 0 ? [] : value.scheduleDays,
+      scheduleDays:
+        enabled && value.scheduleDays.length === 0 ? [] : value.scheduleDays,
     });
   }
 
@@ -51,7 +52,10 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
           <Clock className="w-4 h-4 text-blue-400" />
           Schedule (optional)
         </div>
-        <Switch checked={value.enabled} onCheckedChange={toggleEnabled} />
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: stop propagation only */}
+        <span onClick={(e) => e.stopPropagation()}>
+          <Switch checked={value.enabled} onCheckedChange={toggleEnabled} />
+        </span>
       </button>
 
       {value.enabled && (
@@ -62,7 +66,9 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
               id="scheduleStart"
               type="time"
               value={value.scheduleStart}
-              onChange={(e) => onChange({ ...value, scheduleStart: e.target.value })}
+              onChange={(e) =>
+                onChange({ ...value, scheduleStart: e.target.value })
+              }
               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -72,14 +78,18 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
               id="scheduleEnd"
               type="time"
               value={value.scheduleEnd}
-              onChange={(e) => onChange({ ...value, scheduleEnd: e.target.value })}
+              onChange={(e) =>
+                onChange({ ...value, scheduleEnd: e.target.value })
+              }
               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="col-span-2 space-y-2">
             <Label>Days of week</Label>
-            <p className="text-xs text-neutral-500">Leave all unchecked to show every day</p>
+            <p className="text-xs text-neutral-500">
+              Leave all unchecked to show every day
+            </p>
             <div className="flex gap-2 flex-wrap">
               {DAYS.map((d) => {
                 const active = value.scheduleDays.includes(d.value);
@@ -90,8 +100,8 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
                     onClick={() => toggleDay(d.value)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       active
-                        ? 'bg-blue-600 border-blue-500 text-white'
-                        : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                        ? "bg-blue-600 border-blue-500 text-white"
+                        : "bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500"
                     }`}
                   >
                     {d.label}
@@ -107,7 +117,12 @@ export function ScheduleFields({ value, onChange }: ScheduleFieldsProps) {
 }
 
 export function defaultScheduleValue(): ScheduleValue {
-  return { enabled: false, scheduleStart: '08:00', scheduleEnd: '20:00', scheduleDays: [] };
+  return {
+    enabled: false,
+    scheduleStart: "08:00",
+    scheduleEnd: "20:00",
+    scheduleDays: [],
+  };
 }
 
 /** Convert ScheduleValue to API-ready fields (null when schedule not enabled) */
@@ -116,7 +131,8 @@ export function scheduleValueToApi(v: ScheduleValue): {
   scheduleEnd: string | null;
   scheduleDays: number[] | null;
 } {
-  if (!v.enabled) return { scheduleStart: null, scheduleEnd: null, scheduleDays: null };
+  if (!v.enabled)
+    return { scheduleStart: null, scheduleEnd: null, scheduleDays: null };
   return {
     scheduleStart: v.scheduleStart || null,
     scheduleEnd: v.scheduleEnd || null,
@@ -133,8 +149,8 @@ export function scheduleValueFromApi(
   const enabled = !!(scheduleStart || scheduleEnd || scheduleDays);
   return {
     enabled,
-    scheduleStart: scheduleStart ?? '08:00',
-    scheduleEnd: scheduleEnd ?? '20:00',
+    scheduleStart: scheduleStart ?? "08:00",
+    scheduleEnd: scheduleEnd ?? "20:00",
     scheduleDays: scheduleDays ?? [],
   };
 }
