@@ -1,37 +1,41 @@
 import {
   MediaPickerField,
   isLibrarySourceType,
-} from '@/features/media/components/media-picker-field';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
-import { Select } from '@/shared/components/ui/select';
-import { Switch } from '@/shared/components/ui/switch';
-import type { Slide, SlideSourceType, TransitionType } from '@/shared/types/api';
-import { X } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+} from "@/features/media/components/media-picker-field";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import { Select } from "@/shared/components/ui/select";
+import { Switch } from "@/shared/components/ui/switch";
+import type {
+  Slide,
+  SlideSourceType,
+  TransitionType,
+} from "@/shared/types/api";
+import { X } from "lucide-react";
+import { type FormEvent, useState } from "react";
 import {
   ScheduleFields,
   scheduleValueFromApi,
   scheduleValueToApi,
   type ScheduleValue,
-} from './schedule-fields';
+} from "./schedule-fields";
 
 const SOURCE_TYPES: { value: SlideSourceType; label: string }[] = [
-  { value: 'image', label: 'Image' },
-  { value: 'video', label: 'Video' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'google_slides', label: 'Google Slides' },
-  { value: 'website', label: 'Website' },
+  { value: "image", label: "Image" },
+  { value: "video", label: "Video" },
+  { value: "youtube", label: "YouTube" },
+  { value: "google_slides", label: "Google Slides" },
+  { value: "website", label: "Website" },
 ];
 
 const TRANSITIONS: TransitionType[] = [
-  'fade',
-  'slide-left',
-  'slide-right',
-  'slide-up',
-  'zoom-fade',
-  'ken-burns',
+  "fade",
+  "slide-left",
+  "slide-right",
+  "slide-up",
+  "zoom-fade",
+  "ken-burns",
 ];
 
 interface EditSlideFormSubmitData {
@@ -58,18 +62,29 @@ interface EditSlideFormProps {
   onCancel: () => void;
 }
 
-export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlideFormProps) {
-  const [sourceType, setSourceType] = useState<SlideSourceType>(slide.sourceType);
+export function EditSlideForm({
+  slide,
+  isLoading,
+  onSubmit,
+  onCancel,
+}: EditSlideFormProps) {
+  const [sourceType, setSourceType] = useState<SlideSourceType>(
+    slide.sourceType,
+  );
   const [url, setUrl] = useState(slide.url);
-  const isVideoType = sourceType === 'youtube' || sourceType === 'video';
+  const isVideoType = sourceType === "youtube" || sourceType === "video";
   const [muted, setMuted] = useState(slide.muted ?? true);
   const [schedule, setSchedule] = useState<ScheduleValue>(() =>
-    scheduleValueFromApi(slide.scheduleStart, slide.scheduleEnd, slide.scheduleDays),
+    scheduleValueFromApi(
+      slide.scheduleStart,
+      slide.scheduleEnd,
+      slide.scheduleDays,
+    ),
   );
 
   function handleSourceTypeChange(newType: SlideSourceType) {
     if (isLibrarySourceType(sourceType) !== isLibrarySourceType(newType)) {
-      setUrl('');
+      setUrl("");
     }
     setSourceType(newType);
   }
@@ -78,22 +93,22 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
     e.preventDefault();
     if (!url) return;
     const fd = new FormData(e.currentTarget);
-    const type = fd.get('sourceType') as SlideSourceType;
-    const isVideoSubmit = type === 'youtube' || type === 'video';
-    const rawStart = fd.get('ytStartSeconds');
-    const rawEnd = fd.get('ytEndSeconds');
-    const rawQrUrl = (fd.get('qrUrl') as string)?.trim() || null;
+    const type = fd.get("sourceType") as SlideSourceType;
+    const isVideoSubmit = type === "youtube" || type === "video";
+    const rawStart = fd.get("ytStartSeconds");
+    const rawEnd = fd.get("ytEndSeconds");
+    const rawQrUrl = (fd.get("qrUrl") as string)?.trim() || null;
     const schedApi = scheduleValueToApi(schedule);
     onSubmit({
-      title: fd.get('title') as string,
+      title: fd.get("title") as string,
       sourceType: type,
       url,
-      transitionIn: fd.get('transitionIn') as TransitionType,
+      transitionIn: fd.get("transitionIn") as TransitionType,
       qrUrl: rawQrUrl,
       ...schedApi,
-      ...(type === 'google_slides' && {
-        slideCount: Number(fd.get('slideCount')),
-        slideDurationSeconds: Number(fd.get('slideDurationSeconds')),
+      ...(type === "google_slides" && {
+        slideCount: Number(fd.get("slideCount")),
+        slideDurationSeconds: Number(fd.get("slideDurationSeconds")),
       }),
       ...(isVideoSubmit && {
         ytStartSeconds: rawStart ? Number(rawStart) : 0,
@@ -101,8 +116,8 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
         muted,
       }),
       ...(!isVideoSubmit &&
-        type !== 'google_slides' && {
-          durationSeconds: Number(fd.get('durationSeconds')),
+        type !== "google_slides" && {
+          durationSeconds: Number(fd.get("durationSeconds")) || 0,
         }),
     });
   }
@@ -115,7 +130,9 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
       <div className="relative px-6 py-5 border-b border-neutral-800">
         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 rounded-l" />
         <h3 className="text-base font-semibold text-white">Edit Slide</h3>
-        <p className="text-xs text-neutral-400 mt-0.5 truncate">{slide.title}</p>
+        <p className="text-xs text-neutral-400 mt-0.5 truncate">
+          {slide.title}
+        </p>
       </div>
 
       <div className="p-6 grid grid-cols-2 gap-4">
@@ -136,7 +153,9 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
             id="edit-sourceType"
             name="sourceType"
             value={sourceType}
-            onChange={(e) => handleSourceTypeChange(e.target.value as SlideSourceType)}
+            onChange={(e) =>
+              handleSourceTypeChange(e.target.value as SlideSourceType)
+            }
           >
             {SOURCE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
@@ -148,10 +167,14 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
 
         <div className="col-span-2 space-y-2">
           <Label htmlFor="edit-url">URL / Source</Label>
-          <MediaPickerField sourceType={sourceType} value={url} onChange={setUrl} />
+          <MediaPickerField
+            sourceType={sourceType}
+            value={url}
+            onChange={setUrl}
+          />
         </div>
 
-        {sourceType === 'google_slides' ? (
+        {sourceType === "google_slides" ? (
           <>
             <div className="space-y-2">
               <Label htmlFor="edit-slideCount">Number of Slides</Label>
@@ -166,7 +189,9 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-slideDurationSeconds">Seconds Per Slide</Label>
+              <Label htmlFor="edit-slideDurationSeconds">
+                Seconds Per Slide
+              </Label>
               <Input
                 id="edit-slideDurationSeconds"
                 name="slideDurationSeconds"
@@ -177,10 +202,12 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
               />
             </div>
           </>
-        ) : sourceType === 'youtube' || sourceType === 'video' ? (
+        ) : sourceType === "youtube" || sourceType === "video" ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="edit-ytStartSeconds">Start (seconds, optional)</Label>
+              <Label htmlFor="edit-ytStartSeconds">
+                Start (seconds, optional)
+              </Label>
               <Input
                 id="edit-ytStartSeconds"
                 name="ytStartSeconds"
@@ -202,7 +229,8 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
                 placeholder="Full video"
               />
               <p className="text-xs text-neutral-500">
-                Leave blank to play the full video and auto-advance when it ends.
+                Leave blank to play the full video and auto-advance when it
+                ends.
               </p>
             </div>
 
@@ -210,12 +238,34 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
               <div className="flex items-center justify-between py-1">
                 <div>
                   <Label className="cursor-pointer">Mute audio</Label>
-                  <p className="text-xs text-neutral-500 mt-0.5">Recommended for kiosk displays</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Recommended for kiosk displays
+                  </p>
                 </div>
                 <Switch checked={muted} onCheckedChange={setMuted} />
               </div>
             )}
           </>
+        ) : sourceType === "website" ? (
+          <div className="space-y-2">
+            <Label htmlFor="edit-durationSeconds">
+              Duration (seconds, optional)
+            </Label>
+            <Input
+              id="edit-durationSeconds"
+              name="durationSeconds"
+              type="number"
+              min={1}
+              defaultValue={
+                slide.durationMs > 0 ? slide.durationMs / 1000 : undefined
+              }
+              placeholder="Auto — leave blank to not auto-advance"
+            />
+            <p className="text-xs text-neutral-500">
+              Leave blank if the embedded page controls its own timing. Set a
+              value to auto-advance after that many seconds.
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             <Label htmlFor="edit-durationSeconds">Duration (seconds)</Label>
@@ -232,10 +282,14 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
 
         <div className="space-y-2">
           <Label htmlFor="edit-transitionIn">Transition</Label>
-          <Select id="edit-transitionIn" name="transitionIn" defaultValue={slide.transitionIn}>
+          <Select
+            id="edit-transitionIn"
+            name="transitionIn"
+            defaultValue={slide.transitionIn}
+          >
             {TRANSITIONS.map((t) => (
               <option key={t} value={t}>
-                {t.replace('-', ' ')}
+                {t.replace("-", " ")}
               </option>
             ))}
           </Select>
@@ -259,12 +313,17 @@ export function EditSlideForm({ slide, isLoading, onSubmit, onCancel }: EditSlid
       </div>
 
       <div className="px-6 py-4 border-t border-neutral-800 flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           <X className="w-4 h-4 mr-1" />
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving…' : 'Save Changes'}
+          {isLoading ? "Saving…" : "Save Changes"}
         </Button>
       </div>
     </form>

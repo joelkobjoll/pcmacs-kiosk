@@ -11,6 +11,8 @@ interface UseSlideshow {
   currentIndex: number;
   activeSlides: Slide[];
   isLoading: boolean;
+  /** True until the first successful server fetch completes (cache does not satisfy this) */
+  isFetching: boolean;
   /** Call to immediately advance to the next slide (used by YouTube IFrame API) */
   advance: () => void;
 }
@@ -150,5 +152,12 @@ export function useSlideshow(): UseSlideshow {
     }
   }, [activeSlides.length, currentIndex]);
 
-  return { currentSlide, currentIndex, activeSlides, isLoading, advance };
+  return {
+    currentSlide,
+    currentIndex,
+    activeSlides,
+    isLoading,
+    isFetching,
+    advance,
+  };
 }

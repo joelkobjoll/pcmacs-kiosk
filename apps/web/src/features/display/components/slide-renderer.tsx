@@ -1,9 +1,9 @@
-import type { Slide } from '@/shared/types/api';
-import { Globe, MonitorPlay, Video } from 'lucide-react';
-import { useState } from 'react';
-import { QrOverlay } from './qr-overlay';
-import { VideoSlide } from './video-slide';
-import { YoutubeSlide, extractYoutubeVideoId } from './youtube-slide';
+import type { Slide } from "@/shared/types/api";
+import { Globe, MonitorPlay, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { QrOverlay } from "./qr-overlay";
+import { VideoSlide } from "./video-slide";
+import { YoutubeSlide, extractYoutubeVideoId } from "./youtube-slide";
 
 interface SlideRendererProps {
   slide: Slide;
@@ -25,15 +25,68 @@ function toGoogleSlidesEmbedUrl(url: string, slideDurationMs: number): string {
 
 /** Google Slides embed — no sandbox so the JS auto-advance can run freely */
 function GoogleSlidesSlide({ url, title }: { url: string; title: string }) {
-  return <iframe src={url} title={title} className="w-full h-full border-0" allowFullScreen />;
+  return (
+    <iframe
+      src={url}
+      title={title}
+      className="w-full h-full border-0"
+      allowFullScreen
+    />
+  );
 }
 
 function IframeSlide({
   url,
   title,
   fallbackBg,
-}: { url: string; title: string; fallbackBg: string }) {
+  durationMs,
+  onEnded,
+}: {
+  url: string;
+  title: string;
+  fallbackBg: string;
+  durationMs: number;
+  onEnded?: () => void;
+}) {
   const [blocked, setBlocked] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Listen for KIOSK_PRESENTATION_INFO from the embedded page.
+  // When durationMs is 0 (no manual override), use totalDurationMs reported by the page.
+  useEffect(() => {
+    if (durationMs !== 0 || !onEnded) return;
+
+    function handleMessage(event: MessageEvent) {
+      if (
+        event.source !== iframeRef.current?.contentWindow ||
+        !event.data ||
+        event.data.type !== "KIOSK_PRESENTATION_INFO"
+      )
+        return;
+
+      const total: number = event.data.totalDurationMs ?? 0;
+      if (total > 0) {
+        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = setTimeout(() => onEnded?.(), total);
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    };
+  }, [durationMs, onEnded]);
+
+  function handleLoad() {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc === null) setBlocked(true);
+    } catch {
+      // cross-origin but loaded fine
+    }
+  }
 
   if (blocked) {
     return (
@@ -50,10 +103,12 @@ function IframeSlide({
 
   return (
     <iframe
+      ref={iframeRef}
       src={url}
       title={title}
       className="w-full h-full border-0"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      onLoad={handleLoad}
       onError={() => setBlocked(true)}
     />
   );
@@ -71,7 +126,7 @@ export function SlideRenderer({ slide, onVideoEnded }: SlideRendererProps) {
 
 function renderContent(slide: Slide, onVideoEnded?: () => void) {
   switch (slide.sourceType) {
-    case 'image':
+    case "image":
       return (
         <img
           src={slide.url}
@@ -81,7 +136,7 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case 'video':
+    case "video":
       return (
         <VideoSlide
           src={slide.url}
@@ -92,8 +147,8 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case 'youtube': {
-      const videoId = extractYoutubeVideoId(slide.url) ?? '';
+    case "youtube": {
+      const videoId = extractYoutubeVideoId(slide.url) ?? "";
       return (
         <YoutubeSlide
           videoId={videoId}
@@ -105,7 +160,7 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
       );
     }
 
-    case 'google_slides':
+    case "google_slides":
       return (
         <GoogleSlidesSlide
           url={toGoogleSlidesEmbedUrl(slide.url, slide.slideDurationMs)}
@@ -113,8 +168,16 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case 'website':
-      return <IframeSlide url={slide.url} title={slide.title} fallbackBg="bg-blue-950" />;
+    case "website":
+      return (
+        <IframeSlide
+          url={slide.url}
+          title={slide.title}
+          fallbackBg="bg-blue-950"
+          durationMs={slide.durationMs}
+          onEnded={onVideoEnded}
+        />
+      );
 
     default:
       return (

@@ -1,7 +1,8 @@
-import { MonitorPlay } from 'lucide-react';
-import { SlideRenderer } from '../components/slide-renderer';
-import { TransitionWrapper } from '../components/transition-wrapper';
-import { useSlideshow } from '../hooks/use-slideshow';
+import { MonitorPlay } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { SlideRenderer } from "../components/slide-renderer";
+import { TransitionWrapper } from "../components/transition-wrapper";
+import { useSlideshow } from "../hooks/use-slideshow";
 
 function LoadingScreen() {
   return (
@@ -24,7 +25,36 @@ function LoadingScreen() {
 }
 
 export function DisplayPage() {
-  const { currentSlide, isLoading, activeSlides, advance } = useSlideshow();
+  const { currentSlide, isLoading, isFetching, activeSlides, advance } =
+    useSlideshow();
+  const broadcastSentRef = useRef(false);
+
+  useEffect(() => {
+    // Wait for the first real server fetch to complete so we report accurate durations,
+    // not stale cache values.
+    if (
+      isLoading ||
+      isFetching ||
+      activeSlides.length === 0 ||
+      broadcastSentRef.current
+    )
+      return;
+    broadcastSentRef.current = true;
+
+    const slideCount = activeSlides.length;
+    const slideDurationMs = activeSlides[0]?.durationMs ?? 0;
+    const totalDurationMs = slideCount * slideDurationMs;
+
+    window.parent.postMessage(
+      {
+        type: "KIOSK_PRESENTATION_INFO",
+        slideCount,
+        slideDurationMs,
+        totalDurationMs,
+      },
+      "*",
+    );
+  }, [isLoading, isFetching, activeSlides]);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -34,7 +64,9 @@ export function DisplayPage() {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-neutral-500">
         <MonitorPlay className="w-16 h-16 mb-4 opacity-50 animate-pulse" />
-        <p className="text-xl font-mono uppercase tracking-widest">No active content</p>
+        <p className="text-xl font-mono uppercase tracking-widest">
+          No active content
+        </p>
       </div>
     );
   }
