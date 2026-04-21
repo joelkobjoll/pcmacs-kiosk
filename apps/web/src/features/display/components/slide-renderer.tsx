@@ -48,7 +48,6 @@ function IframeSlide({
   durationMs: number;
   onEnded?: () => void;
 }) {
-  const [blocked, setBlocked] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,28 +78,6 @@ function IframeSlide({
     };
   }, [durationMs, onEnded]);
 
-  function handleLoad() {
-    try {
-      const doc = iframeRef.current?.contentDocument;
-      if (doc === null) setBlocked(true);
-    } catch {
-      // cross-origin but loaded fine
-    }
-  }
-
-  if (blocked) {
-    return (
-      <div
-        className={`w-full h-full flex flex-col items-center justify-center ${fallbackBg} text-white/60`}
-      >
-        <Globe className="w-20 h-20 mb-6 opacity-30" />
-        <p className="text-xl font-semibold opacity-60">{title}</p>
-        <p className="text-sm font-mono mt-2 opacity-40">{url}</p>
-        <p className="text-xs mt-4 opacity-30">This site cannot be embedded</p>
-      </div>
-    );
-  }
-
   return (
     <iframe
       ref={iframeRef}
@@ -108,8 +85,6 @@ function IframeSlide({
       title={title}
       className="w-full h-full border-0"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-      onLoad={handleLoad}
-      onError={() => setBlocked(true)}
     />
   );
 }
