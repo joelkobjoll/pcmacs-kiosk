@@ -10,7 +10,7 @@ echo "==> Updating system packages..."
 apt-get update -y && apt-get upgrade -y
 
 echo "==> Installing Chromium and utilities..."
-apt-get install -y chromium-browser curl unclutter xdotool
+apt-get install -y chromium curl unclutter xdotool
 
 echo "==> Installing Node.js (LTS)..."
 if ! command -v node &>/dev/null; then

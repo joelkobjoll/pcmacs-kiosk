@@ -23,7 +23,7 @@ for i in $(seq 1 20); do
 done
 
 echo "[kiosk] Launching Chromium in kiosk mode..."
-chromium-browser \
+chromium \
   --kiosk \
   --noerrdialogs \
   --disable-infobars \
