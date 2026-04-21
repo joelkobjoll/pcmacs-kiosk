@@ -1,6 +1,6 @@
 import type { Slide } from "@/shared/types/api";
-import { Globe, MonitorPlay, Video } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { MonitorPlay, Video } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { QrOverlay } from "./qr-overlay";
 import { VideoSlide } from "./video-slide";
 import { YoutubeSlide, extractYoutubeVideoId } from "./youtube-slide";
@@ -38,13 +38,11 @@ function GoogleSlidesSlide({ url, title }: { url: string; title: string }) {
 function IframeSlide({
   url,
   title,
-  fallbackBg,
   durationMs,
   onEnded,
 }: {
   url: string;
   title: string;
-  fallbackBg: string;
   durationMs: number;
   onEnded?: () => void;
 }) {
@@ -148,7 +146,6 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         <IframeSlide
           url={slide.url}
           title={slide.title}
-          fallbackBg="bg-blue-950"
           durationMs={slide.durationMs}
           onEnded={onVideoEnded}
         />
