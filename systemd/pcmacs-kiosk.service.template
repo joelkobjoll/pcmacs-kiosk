@@ -1,0 +1,17 @@
+[Unit]
+Description=PC Macs Kiosk
+After=network.target
+
+[Service]
+Type=simple
+User=%KIOSK_USER%
+WorkingDirectory=%KIOSK_DIR%
+ExecStart=/bin/bash %KIOSK_DIR%/scripts/start.sh
+Restart=on-failure
+RestartSec=5
+Environment=PORT=3000
+Environment=BIND_HOST=0.0.0.0
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=graphical.target

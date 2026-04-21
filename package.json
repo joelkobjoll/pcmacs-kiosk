@@ -1,0 +1,22 @@
+{
+  "name": "pcmacs-kiosk",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "preview": "turbo preview"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "turbo": "^2.9.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/express": "5.0.1"
+    }
+  }
+}

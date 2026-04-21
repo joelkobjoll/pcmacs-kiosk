@@ -1,0 +1,9 @@
+.env
+node_modules
+dist
+build
+uploads
+*.log
+.turbo
+data/
+!apps/api/data/.gitkeep
