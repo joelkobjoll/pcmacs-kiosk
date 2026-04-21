@@ -22,6 +22,9 @@ for i in $(seq 1 20); do
   sleep 1
 done
 
+echo "[kiosk] Hiding cursor..."
+unclutter -idle 0 -root -noevents &
+
 echo "[kiosk] Launching Chromium in kiosk mode..."
 chromium \
   --kiosk \
@@ -33,6 +36,7 @@ chromium \
   --disable-session-crashed-bubble \
   --check-for-update-interval=31536000 \
   --disable-component-update \
+  --force-device-scale-factor=1 \
   "http://localhost:$PORT/display"
 
 # If Chromium exits, also stop the API
