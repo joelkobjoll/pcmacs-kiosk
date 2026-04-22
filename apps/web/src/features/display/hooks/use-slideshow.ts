@@ -61,6 +61,7 @@ function isScheduledNow(slide: Slide): boolean {
 export function useSlideshow(): UseSlideshow {
   const [allSlides, setAllSlides] = useState<Slide[]>(() => loadCache());
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [timerEpoch, setTimerEpoch] = useState(0);
   const [isFetching, setIsFetching] = useState(true);
   const [, setTick] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -136,14 +137,19 @@ export function useSlideshow(): UseSlideshow {
       setCurrentIndex(
         (prev) => (prev + 1) % Math.max(activeLengthRef.current, 1),
       );
+      // Increment epoch so this effect always re-arms, even when the index wraps
+      // back to the same value (e.g. single-slide playlist) and currentSlide?.id
+      // doesn't change — without this React bails out and the timer never fires again.
+      setTimerEpoch((e) => e + 1);
     }, currentSlide.durationMs);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-    // Use primitive deps so polls that rebuild object refs don't reset the timer
+    // Use primitive deps so polls that rebuild object refs don't reset the timer.
+    // timerEpoch ensures re-arm even when slide id stays the same after wrapping.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSlide?.id, currentSlide?.durationMs]);
+  }, [currentSlide?.id, currentSlide?.durationMs, timerEpoch]);
 
   // Safety clamp: if index goes out of bounds (e.g. slides deleted)
   useEffect(() => {
