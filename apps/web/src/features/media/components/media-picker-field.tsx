@@ -1,20 +1,18 @@
-import { Input } from "@/shared/components/ui/input";
-import type { MediaItem, SlideSourceType } from "@/shared/types/api";
-import { cn } from "@/shared/utils/cn";
-import { CheckCircle2, Image as ImageIcon, Link, Video } from "lucide-react";
-import { useState } from "react";
-import { useMedia } from "../hooks/use-media";
+import { Input } from '@/shared/components/ui/input';
+import type { MediaItem, SlideSourceType } from '@/shared/types/api';
+import { cn } from '@/shared/utils/cn';
+import { CheckCircle2, Image as ImageIcon, Link, Video } from 'lucide-react';
+import { useState } from 'react';
+import { useMedia } from '../hooks/use-media';
 
-export function isLibrarySourceType(
-  type: SlideSourceType,
-): type is "image" | "video" {
-  return type === "image" || type === "video";
+export function isLibrarySourceType(type: SlideSourceType): type is 'image' | 'video' {
+  return type === 'image' || type === 'video';
 }
 
 function isValidUrl(raw: string): boolean {
   try {
     const u = new URL(raw);
-    return u.protocol === "http:" || u.protocol === "https:";
+    return u.protocol === 'http:' || u.protocol === 'https:';
   } catch {
     return false;
   }
@@ -30,16 +28,12 @@ interface MediaPickerFieldProps {
  * URL field that shows a library picker for image/video types,
  * and a plain URL input for all other types.
  */
-export function MediaPickerField({
-  sourceType,
-  value,
-  onChange,
-}: MediaPickerFieldProps) {
-  const [mode, setMode] = useState<"library" | "url">(() => {
-    if (!isLibrarySourceType(sourceType)) return "url";
+export function MediaPickerField({ sourceType, value, onChange }: MediaPickerFieldProps) {
+  const [mode, setMode] = useState<'library' | 'url'>(() => {
+    if (!isLibrarySourceType(sourceType)) return 'url';
     // If value is already set and doesn't look like an upload path, start in URL mode
-    if (value && !value.includes("/uploads/")) return "url";
-    return "library";
+    if (value && !value.includes('/uploads/')) return 'url';
+    return 'library';
   });
   const [urlError, setUrlError] = useState<string | null>(null);
   const { items, isLoading } = useMedia();
@@ -50,9 +44,7 @@ export function MediaPickerField({
       return;
     }
     setUrlError(
-      isValidUrl(raw)
-        ? null
-        : "Please enter a valid URL (must start with http:// or https://)",
+      isValidUrl(raw) ? null : 'Please enter a valid URL (must start with http:// or https://)',
     );
   }
 
@@ -67,7 +59,7 @@ export function MediaPickerField({
             setUrlError(null);
           }}
           onBlur={(e) => handleUrlBlur(e.target.value)}
-          className={cn(urlError && "border-red-500 focus:ring-red-500")}
+          className={cn(urlError && 'border-red-500 focus:ring-red-500')}
           required
         />
         {urlError && <p className="text-xs text-red-400">{urlError}</p>}
@@ -76,9 +68,9 @@ export function MediaPickerField({
   }
 
   const filteredItems = items.filter((item) =>
-    sourceType === "image"
-      ? item.mimeType.startsWith("image/")
-      : item.mimeType.startsWith("video/"),
+    sourceType === 'image'
+      ? item.mimeType.startsWith('image/')
+      : item.mimeType.startsWith('video/'),
   );
 
   return (
@@ -86,12 +78,12 @@ export function MediaPickerField({
       <div className="flex rounded-lg overflow-hidden border border-neutral-700 w-fit">
         <button
           type="button"
-          onClick={() => setMode("library")}
+          onClick={() => setMode('library')}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-            mode === "library"
-              ? "bg-blue-600 text-white"
-              : "bg-neutral-800 text-neutral-400 hover:text-white",
+            'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors',
+            mode === 'library'
+              ? 'bg-blue-600 text-white'
+              : 'bg-neutral-800 text-neutral-400 hover:text-white',
           )}
         >
           <ImageIcon className="w-3.5 h-3.5" />
@@ -99,12 +91,12 @@ export function MediaPickerField({
         </button>
         <button
           type="button"
-          onClick={() => setMode("url")}
+          onClick={() => setMode('url')}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-            mode === "url"
-              ? "bg-blue-600 text-white"
-              : "bg-neutral-800 text-neutral-400 hover:text-white",
+            'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors',
+            mode === 'url'
+              ? 'bg-blue-600 text-white'
+              : 'bg-neutral-800 text-neutral-400 hover:text-white',
           )}
         >
           <Link className="w-3.5 h-3.5" />
@@ -112,7 +104,7 @@ export function MediaPickerField({
         </button>
       </div>
 
-      {mode === "library" ? (
+      {mode === 'library' ? (
         <LibraryGrid
           items={filteredItems}
           isLoading={isLoading}
@@ -130,14 +122,14 @@ export function MediaPickerField({
               setUrlError(null);
             }}
             onBlur={(e) => handleUrlBlur(e.target.value)}
-            className={cn(urlError && "border-red-500 focus:ring-red-500")}
+            className={cn(urlError && 'border-red-500 focus:ring-red-500')}
             required
           />
           {urlError && <p className="text-xs text-red-400">{urlError}</p>}
         </div>
       )}
 
-      {mode === "library" && value && (
+      {mode === 'library' && value && (
         <p className="text-xs text-neutral-500 truncate font-mono">{value}</p>
       )}
     </div>
@@ -147,18 +139,12 @@ export function MediaPickerField({
 interface LibraryGridProps {
   items: MediaItem[];
   isLoading: boolean;
-  sourceType: "image" | "video";
+  sourceType: 'image' | 'video';
   selectedUrl: string;
   onSelect: (url: string) => void;
 }
 
-function LibraryGrid({
-  items,
-  isLoading,
-  sourceType,
-  selectedUrl,
-  onSelect,
-}: LibraryGridProps) {
+function LibraryGrid({ items, isLoading, sourceType, selectedUrl, onSelect }: LibraryGridProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-24 bg-neutral-950 rounded-lg border border-neutral-800">
@@ -168,13 +154,13 @@ function LibraryGrid({
   }
 
   if (items.length === 0) {
-    const Icon = sourceType === "image" ? ImageIcon : Video;
+    const Icon = sourceType === 'image' ? ImageIcon : Video;
     return (
       <div className="flex flex-col items-center justify-center h-24 bg-neutral-950 rounded-lg border border-dashed border-neutral-800 gap-2 text-neutral-500">
         <Icon className="w-6 h-6" />
         <p className="text-xs">
-          No {sourceType === "image" ? "images" : "videos"} uploaded yet — use
-          the Media Library tab.
+          No {sourceType === 'image' ? 'images' : 'videos'} uploaded yet — use the Media Library
+          tab.
         </p>
       </div>
     );
@@ -191,18 +177,14 @@ function LibraryGrid({
             onClick={() => onSelect(item.url)}
             title={item.originalName}
             className={cn(
-              "relative aspect-video rounded-lg overflow-hidden border-2 transition-all",
+              'relative aspect-video rounded-lg overflow-hidden border-2 transition-all',
               isSelected
-                ? "border-blue-500 ring-2 ring-blue-500/30"
-                : "border-neutral-700 hover:border-neutral-500",
+                ? 'border-blue-500 ring-2 ring-blue-500/30'
+                : 'border-neutral-700 hover:border-neutral-500',
             )}
           >
-            {item.mimeType.startsWith("image/") ? (
-              <img
-                src={item.url}
-                alt={item.originalName}
-                className="w-full h-full object-cover"
-              />
+            {item.mimeType.startsWith('image/') ? (
+              <img src={item.url} alt={item.originalName} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-400">
                 <Video className="w-5 h-5" />

@@ -92,7 +92,13 @@ interface YoutubeSlideProps {
   onEnded: () => void;
 }
 
-export function YoutubeSlide({ videoId, startSeconds, endSeconds, muted, onEnded }: YoutubeSlideProps) {
+export function YoutubeSlide({
+  videoId,
+  startSeconds,
+  endSeconds,
+  muted,
+  onEnded,
+}: YoutubeSlideProps) {
   const idRef = useRef(`yt-${Math.random().toString(36).slice(2)}`);
   const playerRef = useRef<YtPlayerInstance | null>(null);
   // Keep onEnded stable across renders without restarting the player
@@ -112,12 +118,12 @@ export function YoutubeSlide({ videoId, startSeconds, endSeconds, muted, onEnded
         playerVars: {
           autoplay: 1,
           mute: muted ? 1 : 0,
-          controls: 0,        // no control bar
+          controls: 0, // no control bar
           playsinline: 1,
-          rel: 0,             // no related videos at end
-          iv_load_policy: 3,  // disable annotations/overlays
-          modestbranding: 1,  // minimal YouTube branding
-          disablekb: 1,       // disable keyboard shortcuts
+          rel: 0, // no related videos at end
+          iv_load_policy: 3, // disable annotations/overlays
+          modestbranding: 1, // minimal YouTube branding
+          disablekb: 1, // disable keyboard shortcuts
           start: startSeconds || 0,
           ...(endSeconds != null ? { end: endSeconds } : {}),
         },

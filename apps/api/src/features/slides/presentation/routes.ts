@@ -17,13 +17,7 @@ export interface SlideUseCases {
   reorderSlides: ReorderSlidesUseCase;
 }
 
-const SOURCE_TYPES = [
-  'image',
-  'video',
-  'youtube',
-  'google_slides',
-  'website',
-] as const;
+const SOURCE_TYPES = ['image', 'video', 'youtube', 'google_slides', 'website'] as const;
 
 const createSchema = z.object({
   title: z.string().min(1),

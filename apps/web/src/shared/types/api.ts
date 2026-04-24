@@ -7,12 +7,7 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export type SlideSourceType =
-  | 'image'
-  | 'video'
-  | 'youtube'
-  | 'google_slides'
-  | 'website';
+export type SlideSourceType = 'image' | 'video' | 'youtube' | 'google_slides' | 'website';
 export type TransitionType =
   | 'fade'
   | 'slide-left'
@@ -75,4 +70,10 @@ export interface DeviceStatus {
   uptimeSeconds: number;
   storageUsedBytes: number;
   storageTotalBytes: number;
+}
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percent: number;
 }

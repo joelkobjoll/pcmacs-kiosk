@@ -1,8 +1,8 @@
-import { MonitorPlay } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { SlideRenderer } from "../components/slide-renderer";
-import { TransitionWrapper } from "../components/transition-wrapper";
-import { useSlideshow } from "../hooks/use-slideshow";
+import { MonitorPlay } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { SlideRenderer } from '../components/slide-renderer';
+import { TransitionWrapper } from '../components/transition-wrapper';
+import { useSlideshow } from '../hooks/use-slideshow';
 
 function LoadingScreen() {
   return (
@@ -17,28 +17,19 @@ function LoadingScreen() {
           />
         ))}
       </div>
-      <p className="text-white/15 text-xs font-mono uppercase tracking-[0.25em]">
-        Loading content
-      </p>
+      <p className="text-white/15 text-xs font-mono uppercase tracking-[0.25em]">Loading content</p>
     </div>
   );
 }
 
 export function DisplayPage() {
-  const { currentSlide, isLoading, isFetching, activeSlides, advance } =
-    useSlideshow();
+  const { currentSlide, isLoading, isFetching, activeSlides, advance } = useSlideshow();
   const broadcastSentRef = useRef(false);
 
   useEffect(() => {
     // Wait for the first real server fetch to complete so we report accurate durations,
     // not stale cache values.
-    if (
-      isLoading ||
-      isFetching ||
-      activeSlides.length === 0 ||
-      broadcastSentRef.current
-    )
-      return;
+    if (isLoading || isFetching || activeSlides.length === 0 || broadcastSentRef.current) return;
     broadcastSentRef.current = true;
 
     const slideCount = activeSlides.length;
@@ -47,12 +38,12 @@ export function DisplayPage() {
 
     window.parent.postMessage(
       {
-        type: "KIOSK_PRESENTATION_INFO",
+        type: 'KIOSK_PRESENTATION_INFO',
         slideCount,
         slideDurationMs,
         totalDurationMs,
       },
-      "*",
+      '*',
     );
   }, [isLoading, isFetching, activeSlides]);
 
@@ -64,9 +55,7 @@ export function DisplayPage() {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-neutral-500">
         <MonitorPlay className="w-16 h-16 mb-4 opacity-50 animate-pulse" />
-        <p className="text-xl font-mono uppercase tracking-widest">
-          No active content
-        </p>
+        <p className="text-xl font-mono uppercase tracking-widest">No active content</p>
       </div>
     );
   }

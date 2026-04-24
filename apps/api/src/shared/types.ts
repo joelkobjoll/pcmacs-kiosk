@@ -1,9 +1,4 @@
-export type SlideSourceType =
-  | 'image'
-  | 'video'
-  | 'youtube'
-  | 'google_slides'
-  | 'website';
+export type SlideSourceType = 'image' | 'video' | 'youtube' | 'google_slides' | 'website';
 export type TransitionType =
   | 'fade'
   | 'slide-left'

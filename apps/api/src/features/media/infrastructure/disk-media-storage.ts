@@ -18,11 +18,11 @@ const storage = multer.diskStorage({
   },
 });
 
-const ALLOWED_TYPES = /image\/(jpeg|png|gif|webp|svg\+xml)|video\/(mp4|webm)/;
+export const ALLOWED_TYPES = /image\/(jpeg|png|gif|webp|svg\+xml)|video\/(mp4|webm)/;
 
 export const upload = multer({
   storage,
-  limits: { fileSize: 200 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     cb(null, ALLOWED_TYPES.test(file.mimetype));
   },

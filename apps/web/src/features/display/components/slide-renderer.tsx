@@ -1,9 +1,9 @@
-import type { Slide } from "@/shared/types/api";
-import { MonitorPlay, Video } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { QrOverlay } from "./qr-overlay";
-import { VideoSlide } from "./video-slide";
-import { YoutubeSlide, extractYoutubeVideoId } from "./youtube-slide";
+import type { Slide } from '@/shared/types/api';
+import { MonitorPlay, Video } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { QrOverlay } from './qr-overlay';
+import { VideoSlide } from './video-slide';
+import { YoutubeSlide, extractYoutubeVideoId } from './youtube-slide';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -25,14 +25,7 @@ function toGoogleSlidesEmbedUrl(url: string, slideDurationMs: number): string {
 
 /** Google Slides embed — no sandbox so the JS auto-advance can run freely */
 function GoogleSlidesSlide({ url, title }: { url: string; title: string }) {
-  return (
-    <iframe
-      src={url}
-      title={title}
-      className="w-full h-full border-0"
-      allowFullScreen
-    />
-  );
+  return <iframe src={url} title={title} className="w-full h-full border-0" allowFullScreen />;
 }
 
 function IframeSlide({
@@ -58,7 +51,7 @@ function IframeSlide({
       if (
         event.source !== iframeRef.current?.contentWindow ||
         !event.data ||
-        event.data.type !== "KIOSK_PRESENTATION_INFO"
+        event.data.type !== 'KIOSK_PRESENTATION_INFO'
       )
         return;
 
@@ -69,9 +62,9 @@ function IframeSlide({
       }
     }
 
-    window.addEventListener("message", handleMessage);
+    window.addEventListener('message', handleMessage);
     return () => {
-      window.removeEventListener("message", handleMessage);
+      window.removeEventListener('message', handleMessage);
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     };
   }, [durationMs, onEnded]);
@@ -99,7 +92,7 @@ export function SlideRenderer({ slide, onVideoEnded }: SlideRendererProps) {
 
 function renderContent(slide: Slide, onVideoEnded?: () => void) {
   switch (slide.sourceType) {
-    case "image":
+    case 'image':
       return (
         <img
           src={slide.url}
@@ -109,7 +102,7 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case "video":
+    case 'video':
       return (
         <VideoSlide
           src={slide.url}
@@ -120,8 +113,8 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case "youtube": {
-      const videoId = extractYoutubeVideoId(slide.url) ?? "";
+    case 'youtube': {
+      const videoId = extractYoutubeVideoId(slide.url) ?? '';
       return (
         <YoutubeSlide
           videoId={videoId}
@@ -133,7 +126,7 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
       );
     }
 
-    case "google_slides":
+    case 'google_slides':
       return (
         <GoogleSlidesSlide
           url={toGoogleSlidesEmbedUrl(slide.url, slide.slideDurationMs)}
@@ -141,7 +134,7 @@ function renderContent(slide: Slide, onVideoEnded?: () => void) {
         />
       );
 
-    case "website":
+    case 'website':
       return (
         <IframeSlide
           url={slide.url}

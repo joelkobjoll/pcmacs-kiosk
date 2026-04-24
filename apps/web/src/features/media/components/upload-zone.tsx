@@ -1,14 +1,17 @@
+import type { UploadState } from '@/features/media/hooks/use-media';
 import { Button } from '@/shared/components/ui/button';
+import { ProgressBar } from '@/shared/components/ui/progress-bar';
 import { cn } from '@/shared/utils/cn';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
 import { type DragEvent, useRef, useState } from 'react';
 
 interface UploadZoneProps {
-  isUploading: boolean;
+  uploadState: UploadState;
   onFileSelect: (file: File) => void;
+  onCancel: () => void;
 }
 
-export function UploadZone({ isUploading, onFileSelect }: UploadZoneProps) {
+export function UploadZone({ uploadState, onFileSelect, onCancel }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -57,14 +60,25 @@ export function UploadZone({ isUploading, onFileSelect }: UploadZoneProps) {
         onChange={handleInputChange}
         className="hidden"
       />
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => inputRef.current?.click()}
-        disabled={isUploading}
-      >
-        {isUploading ? 'Uploading…' : 'Select File'}
-      </Button>
+
+      {uploadState.isUploading ? (
+        <div className="w-full max-w-md space-y-3">
+          <ProgressBar
+            progress={uploadState.progress}
+            loaded={uploadState.loaded}
+            total={uploadState.total}
+            speedBps={uploadState.speedBps}
+          />
+          <Button type="button" variant="outline" size="sm" onClick={onCancel} className="w-full">
+            <X className="w-4 h-4 mr-1" />
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+          Select File
+        </Button>
+      )}
     </div>
   );
 }
