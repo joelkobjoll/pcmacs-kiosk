@@ -5,7 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/card';
-import { KeyRound, Monitor, Smartphone } from 'lucide-react';
+import { KeyRound, Monitor, Smartphone, Wifi, EthernetPort } from 'lucide-react';
+import type { NetworkStatus } from '@/shared/types/api';
 import { ChangePasswordForm } from '../components/change-password-form';
 import { SettingsForm } from '../components/settings-form';
 import { useDeviceStatus } from '../hooks/use-device-status';
@@ -25,6 +26,61 @@ function formatBytes(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
+}
+
+function NetworkCard({ network }: { network: NetworkStatus }) {
+  const statusColor = network.isConnected ? 'bg-emerald-500' : 'bg-red-500';
+  const statusLabel = network.isConnected ? 'Connected' : 'Disconnected';
+
+  const typeIcon = network.type === 'wifi' ? (
+    <Wifi className="w-4 h-4 text-blue-400" />
+  ) : network.type === 'ethernet' ? (
+    <EthernetPort className="w-4 h-4 text-blue-400" />
+  ) : null;
+
+  const typeLabel = network.type === 'wifi' && network.ssid
+    ? `WiFi: ${network.ssid}`
+    : network.type === 'wifi'
+    ? 'WiFi'
+    : network.type === 'ethernet'
+    ? 'Ethernet'
+    : network.interfaceName !== 'unknown'
+    ? network.interfaceName
+    : 'No connection';
+
+  const subtitle = network.type === 'wifi' && network.signalQuality
+    ? `${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
+    : network.type === 'ethernet' && network.linkSpeed
+    ? network.linkSpeed
+    : null;
+
+  return (
+    <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold">
+          Network
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${statusColor}`} />
+          <span className="text-xs text-neutral-400">{statusLabel}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {typeIcon && (
+          <div className="w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center border border-neutral-800">
+            {typeIcon}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-neutral-200">{typeLabel}</p>
+          <p className="font-mono text-xs text-neutral-400">{network.ipAddress}</p>
+          {subtitle && (
+            <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function SettingsPage() {
@@ -125,27 +181,8 @@ export function SettingsPage() {
                 ))}
               </div>
 
-              {deviceStatus && deviceStatus.networkInterfaces.length > 0 && (
-                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800">
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-2">
-                    Network Interfaces
-                  </p>
-                  <ul className="space-y-1">
-                    {deviceStatus.networkInterfaces.map((iface) => (
-                      <li
-                        key={`${iface.name}-${iface.address}`}
-                        className="text-sm text-neutral-300"
-                      >
-                        <span className="font-medium text-neutral-200">{iface.name}</span>:{' '}
-                        {iface.address}{' '}
-                        <span className="text-neutral-500">({iface.family})</span>
-                        {iface.internal && (
-                          <span className="text-neutral-500 ml-1">internal</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {deviceStatus && (
+                <NetworkCard network={deviceStatus.networkStatus} />
               )}
             </div>
           )}

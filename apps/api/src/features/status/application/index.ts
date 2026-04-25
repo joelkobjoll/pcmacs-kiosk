@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
-import { statfsSync } from 'node:fs';
+import { readFileSync, statfsSync } from 'node:fs';
 import os from 'node:os';
-import type { DeviceStatus } from '../domain/index.js';
+import type { DeviceStatus, NetworkStatus, SignalQuality } from '../domain/index.js';
 
 function getXrandrResolution(): { width: number; height: number } | null {
   try {
@@ -19,6 +19,154 @@ function getXrandrResolution(): { width: number; height: number } | null {
   }
 }
 
+function execSafe(command: string, timeout = 3000): string | null {
+  try {
+    return execSync(command, { encoding: 'utf-8', timeout }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function parseSignalQuality(level: number): SignalQuality {
+  if (level >= 70) return 'excellent';
+  if (level >= 50) return 'good';
+  if (level >= 30) return 'fair';
+  return 'poor';
+}
+
+function getDefaultRouteInterface(): string | null {
+  // Linux: ip route get 1.1.1.1
+  const linuxRoute = execSafe('ip route get 1.1.1.1');
+  if (linuxRoute) {
+    const match = /dev\s+(\S+)/.exec(linuxRoute);
+    if (match) return match[1];
+  }
+
+  // macOS / BSD: route -n get default
+  const bsdRoute = execSafe('route -n get default');
+  if (bsdRoute) {
+    const match = /interface:\s*(\S+)/.exec(bsdRoute);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
+function isWirelessInterface(iface: string): boolean {
+  try {
+    // Check /sys for wireless
+    readFileSync(`/sys/class/net/${iface}/wireless`);
+    return true;
+  } catch {
+    // Fallback: try iwgetid
+    const ssid = execSafe(`iwgetid ${iface} -r`);
+    return ssid !== null;
+  }
+}
+
+function getInterfaceState(iface: string): 'up' | 'down' | 'unknown' {
+  const state = execSafe(`cat /sys/class/net/${iface}/operstate`);
+  if (state === 'up') return 'up';
+  if (state === 'down') return 'down';
+  return 'unknown';
+}
+
+function getInterfaceIp(iface: string): string {
+  const interfaces = os.networkInterfaces();
+  const addrs = interfaces[iface];
+  if (!addrs) return '127.0.0.1';
+  for (const addr of addrs) {
+    if (addr.family === 'IPv4' && !addr.internal) {
+      return addr.address;
+    }
+  }
+  return '127.0.0.1';
+}
+
+function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQuality } {
+  const info: { ssid?: string; signalQuality?: SignalQuality } = {};
+
+  // Try iwgetid for SSID
+  const ssid = execSafe(`iwgetid ${iface} -r`);
+  if (ssid) info.ssid = ssid;
+
+  // Try iw dev for signal level
+  const iwOutput = execSafe(`iw dev ${iface} link`);
+  if (iwOutput) {
+    const signalMatch = /signal:\s*([-\d]+)/.exec(iwOutput);
+    if (signalMatch) {
+      const dbm = parseInt(signalMatch[1], 10);
+      // Convert dBm to approximate percentage (typical range: -30 to -90)
+      const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
+      info.signalQuality = parseSignalQuality(percent);
+    }
+    // Also try to extract SSID from iw if iwgetid failed
+    if (!info.ssid) {
+      const ssidMatch = /SSID:\s*(.+)/.exec(iwOutput);
+      if (ssidMatch) info.ssid = ssidMatch[1].trim();
+    }
+  }
+
+  return info;
+}
+
+function getEthernetSpeed(iface: string): string | undefined {
+  const ethtoolOutput = execSafe(`ethtool ${iface}`);
+  if (ethtoolOutput) {
+    const speedMatch = /Speed:\s*(\S+)/.exec(ethtoolOutput);
+    if (speedMatch) return speedMatch[1];
+  }
+  return undefined;
+}
+
+function getNetworkStatus(): NetworkStatus {
+  const iface = getDefaultRouteInterface();
+
+  if (!iface) {
+    return {
+      isConnected: false,
+      interfaceName: 'unknown',
+      type: 'unknown',
+      ipAddress: '127.0.0.1',
+    };
+  }
+
+  const state = getInterfaceState(iface);
+  const isConnected = state === 'up';
+  const ipAddress = getInterfaceIp(iface);
+
+  if (!isConnected) {
+    return {
+      isConnected: false,
+      interfaceName: iface,
+      type: 'unknown',
+      ipAddress,
+    };
+  }
+
+  const wireless = isWirelessInterface(iface);
+
+  if (wireless) {
+    const wifiInfo = getWifiInfo(iface);
+    return {
+      isConnected: true,
+      interfaceName: iface,
+      type: 'wifi',
+      ipAddress,
+      ssid: wifiInfo.ssid,
+      signalQuality: wifiInfo.signalQuality,
+    };
+  }
+
+  return {
+    isConnected: true,
+    interfaceName: iface,
+    type: 'ethernet',
+    ipAddress,
+    linkSpeed: getEthernetSpeed(iface),
+  };
+}
+
 export class GetDeviceStatusUseCase {
   execute(): DeviceStatus {
     const uptimeSeconds = os.uptime();
@@ -34,16 +182,7 @@ export class GetDeviceStatusUseCase {
     }
 
     const resolution = getXrandrResolution();
-
-    const networkInterfaces = Object.entries(os.networkInterfaces()).flatMap(
-      ([name, addresses]) =>
-        (addresses ?? []).map((addr) => ({
-          name,
-          address: addr.address,
-          family: addr.family,
-          internal: addr.internal,
-        })),
-    );
+    const networkStatus = getNetworkStatus();
 
     return {
       uptimeSeconds,
@@ -51,7 +190,7 @@ export class GetDeviceStatusUseCase {
       storageTotalBytes,
       screenWidth: resolution?.width ?? null,
       screenHeight: resolution?.height ?? null,
-      networkInterfaces,
+      networkStatus,
     };
   }
 }
