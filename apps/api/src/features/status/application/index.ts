@@ -34,6 +34,23 @@ function parseSignalQuality(level: number): SignalQuality {
   return 'poor';
 }
 
+function getMacOsWifiInterface(): string | null {
+  const output = execSafe('networksetup -listallhardwareports');
+  if (!output) return null;
+
+  const lines = output.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('Wi-Fi') || lines[i].includes('AirPort')) {
+      // Look for "Device: enX" in the next few lines
+      for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+        const deviceMatch = /Device:\s*(\S+)/.exec(lines[j]);
+        if (deviceMatch) return deviceMatch[1];
+      }
+    }
+  }
+  return null;
+}
+
 function getDefaultRouteInterface(): string | null {
   // Linux: ip route get 1.1.1.1
   const linuxRoute = execSafe('ip route get 1.1.1.1');
@@ -220,6 +237,31 @@ function getEthernetSpeed(iface: string): string | undefined {
 
 function getNetworkStatus(): NetworkStatus {
   const iface = getDefaultRouteInterface();
+
+  // macOS: check for WiFi separately since it might not be the default route
+  let wifiInterface: string | null = null;
+  if (process.platform === 'darwin') {
+    wifiInterface = getMacOsWifiInterface();
+  }
+
+  if (wifiInterface) {
+    const wifiInfo = getWifiInfo(wifiInterface);
+    if (wifiInfo.ssid) {
+      // WiFi is connected, show it
+      const ipAddress = getInterfaceIp(wifiInterface);
+      return {
+        isConnected: true,
+        interfaceName: wifiInterface,
+        type: 'wifi',
+        ipAddress,
+        ssid: wifiInfo.ssid,
+        signalQuality: wifiInfo.signalQuality,
+        signalDbm: wifiInfo.signalDbm,
+        band: wifiInfo.band,
+        linkSpeed: wifiInfo.linkSpeed,
+      };
+    }
+  }
 
   if (!iface) {
     return {
