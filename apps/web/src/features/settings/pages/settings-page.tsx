@@ -46,7 +46,9 @@ function NetworkCard({ network }: { network: NetworkStatus }) {
   ) : null;
 
   const typeLabel = network.type === 'wifi' && network.ssid
-    ? `WiFi: ${network.ssid}`
+    ? network.band
+      ? `WiFi: ${network.ssid} (${network.band})`
+      : `WiFi: ${network.ssid}`
     : network.type === 'wifi'
     ? 'WiFi'
     : network.type === 'ethernet'
@@ -57,8 +59,8 @@ function NetworkCard({ network }: { network: NetworkStatus }) {
 
   const subtitle = network.type === 'wifi' && network.signalQuality
     ? network.signalDbm !== undefined
-      ? `${network.signalDbm} dBm \u00b7 ${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
-      : `${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
+      ? `${network.signalDbm} dBm \u00b7 ${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal${network.linkSpeed ? ` \u00b7 ${network.linkSpeed}` : ''}`
+      : `${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal${network.linkSpeed ? ` \u00b7 ${network.linkSpeed}` : ''}`
     : network.type === 'ethernet' && network.linkSpeed
     ? network.linkSpeed
     : null;

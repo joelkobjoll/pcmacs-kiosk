@@ -100,14 +100,27 @@ function getInterfaceIp(iface: string): string {
   return '127.0.0.1';
 }
 
-function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number } {
-  const info: { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number } = {};
+function bandFromFrequency(mhz: number): import('../domain/index.js').WifiBand {
+  if (mhz >= 2400 && mhz <= 2500) return '2.4 GHz';
+  if (mhz >= 4900 && mhz <= 5900) return '5 GHz';
+  if (mhz >= 5925 && mhz <= 7125) return '6 GHz';
+  return 'Unknown';
+}
+
+function bandFromChannel(channel: number): import('../domain/index.js').WifiBand {
+  if (channel >= 1 && channel <= 14) return '2.4 GHz';
+  if (channel >= 36 && channel <= 165) return '5 GHz';
+  return 'Unknown';
+}
+
+function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number; band?: import('../domain/index.js').WifiBand; linkSpeed?: string } {
+  const info: { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number; band?: import('../domain/index.js').WifiBand; linkSpeed?: string } = {};
 
   // Try iwgetid for SSID
   const ssid = execSafe(`iwgetid ${iface} -r`);
   if (ssid) info.ssid = ssid;
 
-  // Try iw dev for signal level
+  // Try iw dev for signal level and frequency
   const iwOutput = execSafe(`iw dev ${iface} link`);
   if (iwOutput) {
     const signalMatch = /signal:\s*([-\d]+)/.exec(iwOutput);
@@ -117,6 +130,14 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
       // Convert dBm to approximate percentage (typical range: -30 to -90)
       const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
       info.signalQuality = parseSignalQuality(percent);
+    }
+    const freqMatch = /freq:\s*(\d+)/.exec(iwOutput);
+    if (freqMatch) {
+      info.band = bandFromFrequency(parseInt(freqMatch[1], 10));
+    }
+    const bitrateMatch = /rx bitrate:\s*(.+)/.exec(iwOutput);
+    if (bitrateMatch) {
+      info.linkSpeed = bitrateMatch[1].trim();
     }
     // Also try to extract SSID from iw if iwgetid failed
     if (!info.ssid) {
@@ -139,6 +160,18 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
         info.signalDbm = dbm;
         const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
         info.signalQuality = parseSignalQuality(percent);
+      }
+    }
+    if (!info.band) {
+      const channelMatch = /channel:\s*(\d+)/.exec(airportOutput);
+      if (channelMatch) {
+        info.band = bandFromChannel(parseInt(channelMatch[1], 10));
+      }
+    }
+    if (!info.linkSpeed) {
+      const lastTxRateMatch = /lastTxRate:\s*(\d+)/.exec(airportOutput);
+      if (lastTxRateMatch) {
+        info.linkSpeed = `${lastTxRateMatch[1]} Mbps`;
       }
     }
   }
@@ -192,6 +225,8 @@ function getNetworkStatus(): NetworkStatus {
       ssid: wifiInfo.ssid,
       signalQuality: wifiInfo.signalQuality,
       signalDbm: wifiInfo.signalDbm,
+      band: wifiInfo.band,
+      linkSpeed: wifiInfo.linkSpeed,
     };
   }
 
