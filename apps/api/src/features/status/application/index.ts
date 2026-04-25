@@ -40,9 +40,10 @@ function getMacOsWifiInterface(): string | null {
 
   const lines = output.split('\n');
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('Wi-Fi') || lines[i].includes('AirPort')) {
+    const line = lines[i].toLowerCase();
+    if (line.includes('wi-fi') || line.includes('airport') || line.includes('wlan')) {
       // Look for "Device: enX" in the next few lines
-      for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
         const deviceMatch = /Device:\s*(\S+)/.exec(lines[j]);
         if (deviceMatch) return deviceMatch[1];
       }
@@ -71,18 +72,36 @@ function getDefaultRouteInterface(): string | null {
 
 function isWirelessInterface(iface: string): boolean {
   try {
-    // Check /sys for wireless
+    // Check /sys for wireless (Linux)
     readFileSync(`/sys/class/net/${iface}/wireless`);
     return true;
   } catch {
-    // Fallback: try iwgetid
+    // Linux fallback: try iwgetid
     const ssid = execSafe(`iwgetid ${iface} -r`);
     if (ssid !== null) return true;
 
-    // macOS fallback
+    // macOS: use networksetup to check if this is a WiFi interface
     const networksetupOutput = execSafe(`networksetup -getairportnetwork ${iface}`);
-    if (networksetupOutput && networksetupOutput.includes('Current Wi-Fi Network')) {
-      return true;
+    if (networksetupOutput) {
+      // If it returns anything OTHER than these error phrases, it's WiFi
+      const lower = networksetupOutput.toLowerCase();
+      const isError =
+        lower.includes('not a wi-fi interface') ||
+        lower.includes('not associated') ||
+        lower.includes('unable to retrieve') ||
+        lower.includes('error');
+
+      // Also check if it looks like a valid response (contains the interface name and a network)
+      const looksValid = networksetupOutput.includes(':') || networksetupOutput.length > 3;
+
+      if (!isError && looksValid) return true;
+    }
+
+    // macOS fallback: check ifconfig for wireless media
+    const ifconfigOutput = execSafe(`ifconfig ${iface}`);
+    if (ifconfigOutput) {
+      const lower = ifconfigOutput.toLowerCase();
+      if (lower.includes('ieee80211') || lower.includes('wl')) return true;
     }
 
     return false;
@@ -238,22 +257,21 @@ function getEthernetSpeed(iface: string): string | undefined {
 function getNetworkStatus(): NetworkStatus {
   const iface = getDefaultRouteInterface();
 
-  // macOS: check for WiFi separately since it might not be the default route
-  let wifiInterface: string | null = null;
+  // On macOS, find WiFi interface separately
+  let wifiIface: string | null = null;
   if (process.platform === 'darwin') {
-    wifiInterface = getMacOsWifiInterface();
+    wifiIface = getMacOsWifiInterface();
   }
 
-  if (wifiInterface) {
-    const wifiInfo = getWifiInfo(wifiInterface);
+  // If we found a WiFi interface and it's connected, show WiFi info
+  if (wifiIface) {
+    const wifiInfo = getWifiInfo(wifiIface);
     if (wifiInfo.ssid) {
-      // WiFi is connected, show it
-      const ipAddress = getInterfaceIp(wifiInterface);
       return {
         isConnected: true,
-        interfaceName: wifiInterface,
+        interfaceName: wifiIface,
         type: 'wifi',
-        ipAddress,
+        ipAddress: getInterfaceIp(wifiIface),
         ssid: wifiInfo.ssid,
         signalQuality: wifiInfo.signalQuality,
         signalDbm: wifiInfo.signalDbm,
