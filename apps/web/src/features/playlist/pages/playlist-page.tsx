@@ -66,28 +66,27 @@ export function PlaylistPage() {
         </Button>
       </div>
 
-      {showAddForm && (
-        <AddSlideForm
-          defaultDurationSeconds={(settings?.defaultDurationMs ?? 5000) / 1000}
-          defaultTransition={settings?.defaultTransition ?? 'fade'}
-          isLoading={isAdding}
-          onSubmit={async (data) => {
-            const slide = await addSlide(data);
-            if (slide) setShowAddForm(false);
-          }}
-          onCancel={() => setShowAddForm(false)}
-        />
-      )}
+      <AddSlideForm
+        open={showAddForm}
+        defaultDurationSeconds={(settings?.defaultDurationMs ?? 5000) / 1000}
+        defaultTransition={settings?.defaultTransition ?? 'fade'}
+        isLoading={isAdding}
+        onSubmit={async (data) => {
+          const slide = await addSlide(data);
+          if (slide) setShowAddForm(false);
+        }}
+        onCancel={() => setShowAddForm(false)}
+      />
 
-      {editingSlide && (
-        <EditSlideForm
-          slide={editingSlide}
-          open={!!editingSlide}
-          isLoading={isEditing}
-          onSubmit={(data) => editSlide(editingSlide.id, data)}
-          onCancel={() => setEditingSlideId(null)}
-        />
-      )}
+      <EditSlideForm
+        slide={editingSlide}
+        open={!!editingSlide}
+        isLoading={isEditing}
+        onSubmit={(data) => {
+          if (editingSlide) editSlide(editingSlide.id, data);
+        }}
+        onCancel={() => setEditingSlideId(null)}
+      />
 
       <div className="space-y-3">
         {slides.map((slide, index) => (

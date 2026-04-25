@@ -53,7 +53,7 @@ interface EditSlideFormSubmitData {
 }
 
 interface EditSlideFormProps {
-  slide: Slide;
+  slide: Slide | null;
   isLoading: boolean;
   open: boolean;
   onSubmit: (data: EditSlideFormSubmitData) => void;
@@ -61,13 +61,15 @@ interface EditSlideFormProps {
 }
 
 export function EditSlideForm({ slide, isLoading, open, onSubmit, onCancel }: EditSlideFormProps) {
-  const [sourceType, setSourceType] = useState<SlideSourceType>(slide.sourceType);
-  const [url, setUrl] = useState(slide.url);
+  const [sourceType, setSourceType] = useState<SlideSourceType>(slide?.sourceType ?? 'image');
+  const [url, setUrl] = useState(slide?.url ?? '');
   const isVideoType = sourceType === 'youtube' || sourceType === 'video';
-  const [muted, setMuted] = useState(slide.muted ?? true);
+  const [muted, setMuted] = useState(slide?.muted ?? true);
   const [schedule, setSchedule] = useState<ScheduleValue>(() =>
-    scheduleValueFromApi(slide.scheduleStart, slide.scheduleEnd, slide.scheduleDays),
+    slide ? scheduleValueFromApi(slide.scheduleStart, slide.scheduleEnd, slide.scheduleDays) : defaultScheduleValue(),
   );
+
+  if (!slide) return null;
 
   function handleSourceTypeChange(newType: SlideSourceType) {
     if (isLibrarySourceType(sourceType) !== isLibrarySourceType(newType)) {
