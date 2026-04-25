@@ -240,15 +240,18 @@ export function AddSlideForm({
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="durationSeconds">Duration (seconds)</Label>
+              <Label htmlFor="durationSeconds">Duration (seconds, optional)</Label>
               <Input
                 id="durationSeconds"
                 name="durationSeconds"
                 type="number"
-                min={1}
-                defaultValue={defaultDurationSeconds}
-                required
+                min={0}
+                defaultValue={defaultDurationSeconds > 0 ? defaultDurationSeconds : undefined}
+                placeholder="Auto — leave blank for auto-advance"
               />
+              <p className="text-xs text-neutral-500">
+                Leave blank to auto-advance immediately.
+              </p>
             </div>
           )}
 

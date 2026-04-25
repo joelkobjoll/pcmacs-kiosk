@@ -237,15 +237,18 @@ export function EditSlideForm({ slide, isLoading, open, onSubmit, onCancel }: Ed
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="edit-durationSeconds">Duration (seconds)</Label>
+              <Label htmlFor="edit-durationSeconds">Duration (seconds, optional)</Label>
               <Input
                 id="edit-durationSeconds"
                 name="durationSeconds"
                 type="number"
-                min={1}
-                defaultValue={slide.durationMs / 1000}
-                required
+                min={0}
+                defaultValue={slide.durationMs > 0 ? slide.durationMs / 1000 : undefined}
+                placeholder="Auto — leave blank for auto-advance"
               />
+              <p className="text-xs text-neutral-500">
+                Leave blank to auto-advance immediately.
+              </p>
             </div>
           )}
 
