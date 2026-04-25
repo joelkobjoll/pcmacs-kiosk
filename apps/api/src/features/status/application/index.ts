@@ -100,8 +100,8 @@ function getInterfaceIp(iface: string): string {
   return '127.0.0.1';
 }
 
-function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQuality } {
-  const info: { ssid?: string; signalQuality?: SignalQuality } = {};
+function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number } {
+  const info: { ssid?: string; signalQuality?: SignalQuality; signalDbm?: number } = {};
 
   // Try iwgetid for SSID
   const ssid = execSafe(`iwgetid ${iface} -r`);
@@ -113,6 +113,7 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
     const signalMatch = /signal:\s*([-\d]+)/.exec(iwOutput);
     if (signalMatch) {
       const dbm = parseInt(signalMatch[1], 10);
+      info.signalDbm = dbm;
       // Convert dBm to approximate percentage (typical range: -30 to -90)
       const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
       info.signalQuality = parseSignalQuality(percent);
@@ -135,6 +136,7 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
       const agrCtlRssiMatch = /agrCtlRSSI:\s*([-\d]+)/.exec(airportOutput);
       if (agrCtlRssiMatch) {
         const dbm = parseInt(agrCtlRssiMatch[1], 10);
+        info.signalDbm = dbm;
         const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
         info.signalQuality = parseSignalQuality(percent);
       }
@@ -189,6 +191,7 @@ function getNetworkStatus(): NetworkStatus {
       ipAddress,
       ssid: wifiInfo.ssid,
       signalQuality: wifiInfo.signalQuality,
+      signalDbm: wifiInfo.signalDbm,
     };
   }
 

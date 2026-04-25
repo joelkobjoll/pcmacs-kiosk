@@ -76,6 +76,7 @@ export interface NetworkStatus {
   ipAddress: string;
   ssid?: string;
   signalQuality?: SignalQuality;
+  signalDbm?: number;
   linkSpeed?: string;
 }
 

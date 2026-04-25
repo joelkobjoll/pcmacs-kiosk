@@ -28,6 +28,13 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
 }
 
+function getSignalDbmColor(dbm: number): string {
+  if (dbm >= -50) return 'text-emerald-400';
+  if (dbm >= -65) return 'text-blue-400';
+  if (dbm >= -80) return 'text-amber-400';
+  return 'text-red-400';
+}
+
 function NetworkCard({ network }: { network: NetworkStatus }) {
   const statusColor = network.isConnected ? 'bg-emerald-500' : 'bg-red-500';
   const statusLabel = network.isConnected ? 'Connected' : 'Disconnected';
@@ -49,10 +56,16 @@ function NetworkCard({ network }: { network: NetworkStatus }) {
     : 'No connection';
 
   const subtitle = network.type === 'wifi' && network.signalQuality
-    ? `${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
+    ? network.signalDbm !== undefined
+      ? `${network.signalDbm} dBm \u00b7 ${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
+      : `${network.signalQuality.charAt(0).toUpperCase() + network.signalQuality.slice(1)} signal`
     : network.type === 'ethernet' && network.linkSpeed
     ? network.linkSpeed
     : null;
+
+  const signalColor = network.type === 'wifi' && network.signalDbm !== undefined
+    ? getSignalDbmColor(network.signalDbm)
+    : 'text-neutral-500';
 
   return (
     <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800">
@@ -75,7 +88,7 @@ function NetworkCard({ network }: { network: NetworkStatus }) {
           <p className="text-sm font-medium text-neutral-200">{typeLabel}</p>
           <p className="font-mono text-xs text-neutral-400">{network.ipAddress}</p>
           {subtitle && (
-            <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>
+            <p className={`text-xs mt-0.5 ${signalColor}`}>{subtitle}</p>
           )}
         </div>
       </div>
