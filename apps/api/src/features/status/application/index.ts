@@ -64,7 +64,7 @@ function isWirelessInterface(iface: string): boolean {
 
     // macOS fallback
     const networksetupOutput = execSafe(`networksetup -getairportnetwork ${iface}`);
-    if (networksetupOutput !== null && !networksetupOutput.includes('not a Wi-Fi interface')) {
+    if (networksetupOutput && networksetupOutput.includes('Current Wi-Fi Network')) {
       return true;
     }
 
@@ -146,7 +146,14 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
     }
   }
 
-  // macOS fallback
+  // macOS: try networksetup first (more reliable than airport)
+  const networksetupSsid = execSafe(`networksetup -getairportnetwork ${iface}`);
+  if (networksetupSsid) {
+    const match = /Current Wi-Fi Network:\s*(.+)/.exec(networksetupSsid);
+    if (match) info.ssid = match[1].trim();
+  }
+
+  // macOS fallback via airport tool (may be missing on some versions)
   const airportOutput = execSafe('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I');
   if (airportOutput) {
     if (!info.ssid) {
@@ -172,6 +179,29 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
       const lastTxRateMatch = /lastTxRate:\s*(\d+)/.exec(airportOutput);
       if (lastTxRateMatch) {
         info.linkSpeed = `${lastTxRateMatch[1]} Mbps`;
+      }
+    }
+  }
+
+  // macOS: fallback signal info via system_profiler if airport is unavailable
+  if (!info.signalQuality) {
+    const systemProfilerOutput = execSafe('system_profiler SPAirPortDataType');
+    if (systemProfilerOutput) {
+      // Try to find the active interface's signal info
+      const sections = systemProfilerOutput.split(/\n\s*\n/);
+      for (const section of sections) {
+        if (!section.includes(iface)) continue;
+        const rssiMatch = /Signal \/? Noise:\s*([-\d]+)/.exec(section);
+        if (rssiMatch) {
+          const dbm = parseInt(rssiMatch[1], 10);
+          info.signalDbm = dbm;
+          const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
+          info.signalQuality = parseSignalQuality(percent);
+        }
+        const channelMatch = /Channel:\s*(\d+)/.exec(section);
+        if (channelMatch && !info.band) {
+          info.band = bandFromChannel(parseInt(channelMatch[1], 10));
+        }
       }
     }
   }
