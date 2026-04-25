@@ -60,14 +60,31 @@ function isWirelessInterface(iface: string): boolean {
   } catch {
     // Fallback: try iwgetid
     const ssid = execSafe(`iwgetid ${iface} -r`);
-    return ssid !== null;
+    if (ssid !== null) return true;
+
+    // macOS fallback
+    const networksetupOutput = execSafe(`networksetup -getairportnetwork ${iface}`);
+    if (networksetupOutput !== null && !networksetupOutput.includes('not a Wi-Fi interface')) {
+      return true;
+    }
+
+    return false;
   }
 }
 
 function getInterfaceState(iface: string): 'up' | 'down' | 'unknown' {
+  // Linux
   const state = execSafe(`cat /sys/class/net/${iface}/operstate`);
   if (state === 'up') return 'up';
   if (state === 'down') return 'down';
+
+  // macOS
+  const ifconfigOutput = execSafe(`ifconfig ${iface}`);
+  if (ifconfigOutput) {
+    if (ifconfigOutput.includes('status: active')) return 'up';
+    if (ifconfigOutput.includes('status: inactive')) return 'down';
+  }
+
   return 'unknown';
 }
 
@@ -104,6 +121,23 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
     if (!info.ssid) {
       const ssidMatch = /SSID:\s*(.+)/.exec(iwOutput);
       if (ssidMatch) info.ssid = ssidMatch[1].trim();
+    }
+  }
+
+  // macOS fallback
+  const airportOutput = execSafe('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I');
+  if (airportOutput) {
+    if (!info.ssid) {
+      const ssidMatch = /\s*SSID:\s*(.+)/.exec(airportOutput);
+      if (ssidMatch) info.ssid = ssidMatch[1].trim();
+    }
+    if (!info.signalQuality) {
+      const agrCtlRssiMatch = /agrCtlRSSI:\s*([-\d]+)/.exec(airportOutput);
+      if (agrCtlRssiMatch) {
+        const dbm = parseInt(agrCtlRssiMatch[1], 10);
+        const percent = Math.max(0, Math.min(100, 2 * (dbm + 100)));
+        info.signalQuality = parseSignalQuality(percent);
+      }
     }
   }
 

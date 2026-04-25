@@ -10,7 +10,7 @@ import { Select } from '@/shared/components/ui/select';
 import { Switch } from '@/shared/components/ui/switch';
 import type { Slide, SlideSourceType, TransitionType } from '@/shared/types/api';
 import { X } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import {
   ScheduleFields,
   defaultScheduleValue,
@@ -69,6 +69,15 @@ export function EditSlideForm({ slide, isLoading, open, onSubmit, onCancel }: Ed
   const [schedule, setSchedule] = useState<ScheduleValue>(() =>
     slide ? scheduleValueFromApi(slide.scheduleStart, slide.scheduleEnd, slide.scheduleDays) : defaultScheduleValue(),
   );
+
+  useEffect(() => {
+    if (slide && open) {
+      setSourceType(slide.sourceType);
+      setUrl(slide.url);
+      setMuted(slide.muted ?? true);
+      setSchedule(scheduleValueFromApi(slide.scheduleStart, slide.scheduleEnd, slide.scheduleDays));
+    }
+  }, [slide, open]);
 
   if (!slide) return null;
 
