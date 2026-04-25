@@ -41,7 +41,8 @@ function getMacOsWifiInterface(): string | null {
   const lines = output.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].toLowerCase();
-    if (line.includes('wi-fi') || line.includes('airport') || line.includes('wlan')) {
+    // Match: "Hardware Port: Wi-Fi" or "Hardware Port: AirPort" or "Hardware Port: WLAN"
+    if (line.includes('hardware port') && (line.includes('wi-fi') || line.includes('airport') || line.includes('wlan'))) {
       // Look for "Device: enX" in the next few lines
       for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
         const deviceMatch = /Device:\s*(\S+)/.exec(lines[j]);
@@ -185,8 +186,29 @@ function getWifiInfo(iface: string): { ssid?: string; signalQuality?: SignalQual
   // macOS: try networksetup first (more reliable than airport)
   const networksetupSsid = execSafe(`networksetup -getairportnetwork ${iface}`);
   if (networksetupSsid) {
-    const match = /Current Wi-Fi Network:\s*(.+)/.exec(networksetupSsid);
-    if (match) info.ssid = match[1].trim();
+    // Handle formats:
+    // "Current Wi-Fi Network: MyNetworkName"
+    // "MyNetworkName" (older macOS without prefix)
+    // "You are not associated with an AirPort network." (not connected)
+    const lower = networksetupSsid.toLowerCase();
+
+    // Skip error/disconnected messages
+    const isDisconnected =
+      lower.includes('not associated') ||
+      lower.includes('not a wi-fi') ||
+      lower.includes('power is currently off') ||
+      lower.includes('unable to retrieve');
+
+    if (!isDisconnected) {
+      // Try to extract SSID - could be "Current Wi-Fi Network: Name" or just "Name"
+      const match = /(?:Current Wi-Fi Network:\s*)?(.+)/.exec(networksetupSsid);
+      if (match) {
+        const ssid = match[1].trim();
+        if (ssid.length > 0 && !ssid.toLowerCase().includes('error')) {
+          info.ssid = ssid;
+        }
+      }
+    }
   }
 
   // macOS fallback via airport tool (may be missing on some versions)
@@ -257,14 +279,30 @@ function getEthernetSpeed(iface: string): string | undefined {
 function getNetworkStatus(): NetworkStatus {
   const iface = getDefaultRouteInterface();
 
-  // On macOS, find WiFi interface separately
+  // macOS: find WiFi interface
   let wifiIface: string | null = null;
   if (process.platform === 'darwin') {
     wifiIface = getMacOsWifiInterface();
   }
 
-  // If we found a WiFi interface and it's connected, show WiFi info
-  if (wifiIface) {
+  // If WiFi interface matches default route, it's definitely WiFi
+  if (wifiIface && wifiIface === iface) {
+    const wifiInfo = getWifiInfo(wifiIface);
+    return {
+      isConnected: true,
+      interfaceName: wifiIface,
+      type: 'wifi',
+      ipAddress: getInterfaceIp(wifiIface),
+      ssid: wifiInfo.ssid ?? 'Unknown Network',
+      signalQuality: wifiInfo.signalQuality,
+      signalDbm: wifiInfo.signalDbm,
+      band: wifiInfo.band,
+      linkSpeed: wifiInfo.linkSpeed,
+    };
+  }
+
+  // If WiFi is a different interface but connected, show WiFi
+  if (wifiIface && wifiIface !== iface) {
     const wifiInfo = getWifiInfo(wifiIface);
     if (wifiInfo.ssid) {
       return {
