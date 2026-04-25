@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import {
   ScheduleFields,
+  defaultScheduleValue,
   scheduleValueFromApi,
   scheduleValueToApi,
   type ScheduleValue,
