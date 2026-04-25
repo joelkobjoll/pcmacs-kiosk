@@ -82,6 +82,7 @@ export function PlaylistPage() {
       {editingSlide && (
         <EditSlideForm
           slide={editingSlide}
+          open={!!editingSlide}
           isLoading={isEditing}
           onSubmit={(data) => editSlide(editingSlide.id, data)}
           onCancel={() => setEditingSlideId(null)}
