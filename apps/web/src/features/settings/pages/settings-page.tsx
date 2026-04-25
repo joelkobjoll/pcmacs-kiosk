@@ -40,7 +40,11 @@ export function SettingsPage() {
   }
 
   const screenLabel =
-    typeof window !== 'undefined' ? `${window.screen.width}×${window.screen.height}` : '—';
+    deviceStatus?.screenWidth && deviceStatus?.screenHeight
+      ? `${deviceStatus.screenWidth}×${deviceStatus.screenHeight}`
+      : typeof window !== 'undefined'
+        ? `${window.screen.width}×${window.screen.height}`
+        : '—';
 
   const storageFreeBytes = deviceStatus
     ? deviceStatus.storageTotalBytes - deviceStatus.storageUsedBytes
@@ -105,19 +109,44 @@ export function SettingsPage() {
               Loading…
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="bg-neutral-950 p-4 rounded-xl border border-neutral-800"
-                >
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">
-                    {stat.label}
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="bg-neutral-950 p-4 rounded-xl border border-neutral-800"
+                  >
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className={`text-xs mt-1 ${stat.color}`}>{stat.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {deviceStatus && deviceStatus.networkInterfaces.length > 0 && (
+                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800">
+                  <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-2">
+                    Network Interfaces
                   </p>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className={`text-xs mt-1 ${stat.color}`}>{stat.sub}</p>
+                  <ul className="space-y-1">
+                    {deviceStatus.networkInterfaces.map((iface) => (
+                      <li
+                        key={`${iface.name}-${iface.address}`}
+                        className="text-sm text-neutral-300"
+                      >
+                        <span className="font-medium text-neutral-200">{iface.name}</span>:{' '}
+                        {iface.address}{' '}
+                        <span className="text-neutral-500">({iface.family})</span>
+                        {iface.internal && (
+                          <span className="text-neutral-500 ml-1">internal</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </CardContent>
